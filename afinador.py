@@ -9,7 +9,9 @@ FORMAT = pyaudio.paInt16  # Formato de áudio
 CHANNELS = 1  # Número de canais
 RATE = 44100  # Taxa de amostragem
 CHUNK = 1024  # Tamanho do buffer
-VOLUME_THRESHOLD = 500  # Limiar de volume (ajuste conforme necessário)
+
+VOLUME_THRESHOLD = 500  # MODIFICAVEL | serve para definir volume minimo de audio detectavel
+MARGEM_ERRO = 3  # MODIFICAVEL | Margem de erro para a afinação
 
 # Variáveis globais para armazenar a última nota, instrução e frequência detectadas
 last_note = None
@@ -28,7 +30,7 @@ def capture_audio():
 
     frames = []
 
-    for i in range(0, int(RATE / CHUNK * 1)):  # Captura 1 segundo de áudio
+    for i in range(0, int(RATE / CHUNK * 1)):  # MODIFICAVEL | grava audio de 1 em 1 segundo
         data = stream.read(CHUNK)
         frames.append(data)
 
@@ -76,17 +78,14 @@ def frequency_to_note(freq):
     return name, h
 
 # Função para determinar se a corda deve ser apertada ou afrouxada
-def tuning_instructions(freq, note, h):
-    A4 = 440.0
-    C0 = A4 * pow(2, -4.75)
-    target_h = round(12 * np.log2(note_to_frequency(note) / C0))
-
-    if h < target_h:
-        return "Aperte a corda"
-    elif h > target_h:
-        return "Afrouxe a corda"
-    else:
+def tuning_instructions(freq, note, note_frequency):
+    difference = freq - note_frequency
+    if abs(difference) <= MARGEM_ERRO:
         return "Afinado"
+    elif difference > MARGEM_ERRO:
+        return "Afrouxe a corda"
+    elif difference < -MARGEM_ERRO:
+        return "Aperte a corda"
 
 # Função para converter nota para frequência
 def note_to_frequency(note):
@@ -114,7 +113,7 @@ def update_plot(frame):
         note, h = frequency_to_note(freq)
         note_frequency = note_to_frequency(note)
         last_note = f"{note} ({note_frequency:.2f} Hz)"
-        instruction = tuning_instructions(freq, note, h)
+        instruction = tuning_instructions(freq, note, note_frequency)
         last_instruction = instruction
         last_frequency = freq
         plt.title(f'Frequência Dominante: {freq:.2f} Hz\nNota: {last_note}\nInstrução: {instruction}')
@@ -126,7 +125,7 @@ def update_plot(frame):
 
 # Configura a animação do Matplotlib
 fig, ax = plt.subplots()
-ani = FuncAnimation(fig, update_plot, interval=1000)  # Atualiza a cada 1 segundo
+ani = FuncAnimation(fig, update_plot, interval=1000)  # MODIFICAVEL, Atualiza o grafico a cada 1 segundo
 
 # Mostra a janela do Matplotlib
 plt.show()
