@@ -48,13 +48,13 @@ def process_audio(audio_data):
     amplitude_mean = np.mean(np.abs(audio_array))
 
     if amplitude_mean < VOLUME_THRESHOLD:
-        return None  # Ignorar se a amplitude média estiver abaixo do limiar
+        return None, xf, np.abs(yf[:N//2])  # Ignorar se a amplitude média estiver abaixo do limiar
 
     # Encontrar a frequência dominante
     idx = np.argmax(np.abs(yf[:N//2]))
     freq = xf[idx]
 
-    return freq
+    return freq, xf, np.abs(yf[:N//2])
 
 # Função para mapear a frequência para a nota musical
 def frequency_to_note(freq):
@@ -77,27 +77,22 @@ def frequency_to_note(freq):
 def update_plot(frame):
     global last_note
     audio_data = capture_audio()
-    freq = process_audio(audio_data)
+    freq, xf, yf = process_audio(audio_data)
+
+    plt.clf()
+    plt.plot(xf, yf)
+    plt.xlabel('Frequência (Hz)')
+    plt.ylabel('Magnitude')
 
     if freq is not None:
         note = frequency_to_note(freq)
         last_note = note
-        plt.clf()
         plt.title(f'Frequência Dominante: {freq:.2f} Hz\nNota: {note}')
-        plt.xlabel('Frequência (Hz)')
-        plt.ylabel('Magnitude')
-        plt.xlim(0, 2000)
-        plt.ylim(0, 1)
     else:
-        plt.clf()
         if last_note:
             plt.title(f'Volume abaixo do limiar\nÚltima Nota: {last_note}')
         else:
             plt.title('Volume abaixo do limiar')
-        plt.xlabel('Frequência (Hz)')
-        plt.ylabel('Magnitude')
-        plt.xlim(0, 2000)
-        plt.ylim(0, 1)
 
 # Configura a animação do Matplotlib
 fig, ax = plt.subplots()
