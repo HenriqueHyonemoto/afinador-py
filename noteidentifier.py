@@ -2,7 +2,8 @@
 
 import pyaudio
 import numpy as np
-from aubio import source, pitch
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 
 # Configurações do microfone
 FORMAT = pyaudio.paFloat32
@@ -20,32 +21,28 @@ stream = p.open(format=FORMAT,
                 input=True,
                 frames_per_buffer=CHUNK)
 
-# Configura o Aubio para detecção de pitch
-tolerance = 0.8
-pitch_o = pitch("yin", CHUNK, CHUNK, RATE)
-pitch_o.set_unit("midi")
-pitch_o.set_tolerance(tolerance)
+# Configurações do espectrograma
+fig, ax = plt.subplots()
+x = np.arange(0, CHUNK)
+line, = ax.plot(x, np.random.rand(CHUNK))
+ax.set_ylim(0, 1)
+ax.set_xlim(0, CHUNK)
 
-print("Capturando áudio... Pressione Ctrl+C para parar.")
+# Função para atualizar o espectrograma
+def update(frame):
+    data = stream.read(CHUNK)
+    samples = np.frombuffer(data, dtype=np.float32)
+    fft_result = np.fft.fft(samples)
+    fft_magnitude = np.abs(fft_result)
+    line.set_ydata(fft_magnitude[:CHUNK//2])
+    return line,
 
-try:
-    while True:
-        # Lê dados do microfone
-        data = stream.read(CHUNK)
-        samples = np.frombuffer(data, dtype=np.float32)
+# Cria a animação
+ani = FuncAnimation(fig, update, blit=True)
 
-        # Detecta o pitch
-        pitch_value = pitch_o(samples)[0]
-        note = pitch_value if pitch_value > 0 else None
+plt.show()
 
-        if note:
-            print(f"Nota detectada: {note:.2f} MIDI")
-
-except KeyboardInterrupt:
-    print("Captura de áudio encerrada.")
-
-finally:
-    # Fecha o stream e termina o PyAudio
-    stream.stop_stream()
-    stream.close()
-    p.terminate()
+# Fecha o stream e termina o PyAudio
+stream.stop_stream()
+stream.close()
+p.terminate()
