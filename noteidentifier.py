@@ -1,5 +1,3 @@
-# pip install pyaudio aubio numpy
-
 import pyaudio
 import numpy as np
 import matplotlib.pyplot as plt
@@ -23,10 +21,10 @@ stream = p.open(format=FORMAT,
 
 # Configurações do espectrograma
 fig, ax = plt.subplots()
-x = np.arange(0, CHUNK)
-line, = ax.plot(x, np.random.rand(CHUNK))
+x = np.arange(0, CHUNK // 2)
+line, = ax.plot(x, np.random.rand(CHUNK // 2))
 ax.set_ylim(0, 1)
-ax.set_xlim(0, CHUNK)
+ax.set_xlim(0, CHUNK // 2)
 
 # Função para atualizar o espectrograma
 def update(frame):
@@ -34,11 +32,11 @@ def update(frame):
     samples = np.frombuffer(data, dtype=np.float32)
     fft_result = np.fft.fft(samples)
     fft_magnitude = np.abs(fft_result)
-    line.set_ydata(fft_magnitude[:CHUNK//2])
+    line.set_ydata(fft_magnitude[:CHUNK // 2])
     return line,
 
 # Cria a animação
-ani = FuncAnimation(fig, update, blit=True)
+ani = FuncAnimation(fig, update, blit=True, cache_frame_data=False)
 
 plt.show()
 
