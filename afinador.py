@@ -11,8 +11,10 @@ RATE = 44100  # Taxa de amostragem
 CHUNK = 1024  # Tamanho do buffer
 VOLUME_THRESHOLD = 500  # Limiar de volume (ajuste conforme necessário)
 
-# Variável global para armazenar a última nota detectada
+# Variáveis globais para armazenar a última nota, instrução e frequência detectadas
 last_note = None
+last_instruction = None
+last_frequency = None
 
 # Função para capturar o áudio
 def capture_audio():
@@ -71,11 +73,35 @@ def frequency_to_note(freq):
     n = h % 12
     name = notes[n] + str(octave)
 
-    return name
+    return name, h
+
+# Função para determinar se a corda deve ser apertada ou afrouxada
+def tuning_instructions(freq, note, h):
+    A4 = 440.0
+    C0 = A4 * pow(2, -4.75)
+    target_h = round(12 * np.log2(note_to_frequency(note) / C0))
+
+    if h < target_h:
+        return "Aperte a corda"
+    elif h > target_h:
+        return "Afrouxe a corda"
+    else:
+        return "Afinado"
+
+# Função para converter nota para frequência
+def note_to_frequency(note):
+    notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+    A4 = 440.0
+    C0 = A4 * pow(2, -4.75)
+    note_name = note[:-1]
+    octave = int(note[-1])
+    note_index = notes.index(note_name)
+    h = 12 * octave + note_index
+    return C0 * pow(2, h / 12)
 
 # Função para atualizar o gráfico
 def update_plot(frame):
-    global last_note
+    global last_note, last_instruction, last_frequency
     audio_data = capture_audio()
     freq, xf, yf = process_audio(audio_data)
 
@@ -85,12 +111,16 @@ def update_plot(frame):
     plt.ylabel('Magnitude')
 
     if freq is not None:
-        note = frequency_to_note(freq)
-        last_note = note
-        plt.title(f'Frequência Dominante: {freq:.2f} Hz\nNota: {note}')
+        note, h = frequency_to_note(freq)
+        note_frequency = note_to_frequency(note)
+        last_note = f"{note} ({note_frequency:.2f} Hz)"
+        instruction = tuning_instructions(freq, note, h)
+        last_instruction = instruction
+        last_frequency = freq
+        plt.title(f'Frequência Dominante: {freq:.2f} Hz\nNota: {last_note}\nInstrução: {instruction}')
     else:
         if last_note:
-            plt.title(f'Volume abaixo do limiar\nÚltima Nota: {last_note}')
+            plt.title(f'Última Frequência: {last_frequency:.2f} Hz\nÚltima Nota: {last_note}\nÚltima Instrução: {last_instruction}')
         else:
             plt.title('Volume abaixo do limiar')
 
