@@ -10,8 +10,8 @@ CHANNELS = 1  # Número de canais
 RATE = 44100  # Taxa de amostragem
 CHUNK = 1024  # Tamanho do buffer
 
-VOLUME_THRESHOLD = 500  # MODIFICAVEL | serve para definir volume minimo de audio detectavel
-MARGEM_ERRO = 3  # MODIFICAVEL | Margem de erro para a afinação
+VOLUME_THRESHOLD = 300  # MODIFICAVEL | serve para definir volume minimo de audio detectavel
+MARGEM_ERRO = 0.5  # MODIFICAVEL | Margem de erro para a afinação
 
 # Variáveis globais para armazenar a última nota, instrução e frequência detectadas
 last_note = None
@@ -116,7 +116,14 @@ def update_plot(frame):
         instruction = tuning_instructions(freq, note, note_frequency)
         last_instruction = instruction
         last_frequency = freq
-        plt.title(f'Frequência Dominante: {freq:.2f} Hz\nNota: {last_note}\nInstrução: {instruction}')
+
+        # Definir a cor do texto com base na instrução
+        if instruction == "Afinado":
+            text_color = 'green'
+        else:
+            text_color = 'orange'
+
+        plt.title(f'Frequência Dominante: {freq:.2f} Hz\nNota: {last_note}\nInstrução: {instruction}', color=text_color)
     else:
         if last_note:
             plt.title(f'Última Frequência: {last_frequency:.2f} Hz\nÚltima Nota: {last_note}\nÚltima Instrução: {last_instruction}')
