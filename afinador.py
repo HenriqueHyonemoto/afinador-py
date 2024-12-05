@@ -20,6 +20,7 @@ ultima_frequencia = None
 
 # Função para capturar o áudio
 def capturar_audio():
+    # Inicializa a biblioteca pyaudio
     audio = pyaudio.PyAudio()
 
     # Abre uma captura de audio do Microfone
@@ -35,14 +36,17 @@ def capturar_audio():
         data = stream.read(TAMANHO_BUFFER)
         frames.append(data)
 
+    # Encerrar a gravação
     stream.stop_stream()
     stream.close()
     audio.terminate()
 
+    # Retorna o audio gravado por esse periodo (1s setado acima)
     return b''.join(frames)
 
 # Função para processar o áudio e encontrar a frequência dominante
 def processar_audio(dados_audio):
+    # Processar um sinal de áudio, e converte para um formato manipulável em código
     array_audio = np.frombuffer(dados_audio, dtype=np.int16)
     N = len(array_audio)
     T = 1.0 / TAXA_AMOSTRAGEM
@@ -52,39 +56,43 @@ def processar_audio(dados_audio):
     # Calcular a amplitude média
     amplitude_media = np.mean(np.abs(array_audio))
 
+    # Ignorar se a amplitude média estiver abaixo do limiar
     if amplitude_media < LIMIAR_VOLUME:
-        return None, xf, np.abs(yf[:N//2])  # Ignorar se a amplitude média estiver abaixo do limiar
+        return None, xf, np.abs(yf[:N//2])  
 
     # Encontrar a frequência dominante
     idx = np.argmax(np.abs(yf[:N//2]))
     freq = xf[idx]
 
+    # Retorna os valores obtidos
     return freq, xf, np.abs(yf[:N//2])
 
 # Função para mapear a frequência para a nota musical
 def frequencia_para_nota(freq):
-    notas = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
-    A4 = 440.0
-    C0 = A4 * pow(2, -4.75)
-    nome = ""
+    notas = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] # Todas as 12 Notas Musicais
+    A4 = 440.0 # Define a nota LA4 com 440hz
+    C0 = A4 * pow(2, -4.75) # Calcula a frequencia de C0 com base na frequencia de LA4
+    nome = "" # Nome da nota (C D E F G A B etc)
 
-    if freq == 0:
+    if freq == 0: # Ignorar caso não tenha som
         return None
 
-    h = round(12 * np.log2(freq / C0))
-    oitava = h // 12
-    n = h % 12
+    h = round(12 * np.log2(freq / C0)) # Calcula quantos semitons a frequencia esta acima de C0
+    oitava = h // 12 # Calcula em qual oitava esta a nota (ex: agudo, medio, grave)
+    n = h % 12 # Calcula qual o tom da nota dentro da oitava
 
-    if n < 0 or n >= len(notas):
+    # Verifica se o índice da nota (n) está dentro do intervalo válido (correção de bug). 
+    if n < 0 or n >= len(notas): 
         return None
 
-    nome = notas[n] + str(oitava)
+    nome = notas[n] + str(oitava) # O nome da nota + a oitava (Ex A4, C2, F5)
 
+    # Retorna dados obtidos (Nota + Posição da nota)
     return nome, h
 
 # Função para determinar se a corda deve ser apertada ou afrouxada
 def instrucoes_afinacao(freq, nota, frequencia_nota):
-    diferenca = freq - frequencia_nota
+    diferenca = freq - frequencia_nota 
     if abs(diferenca) <= MARGEM_ERRO:
         return "Afinado"
     elif diferenca > MARGEM_ERRO:
@@ -95,7 +103,7 @@ def instrucoes_afinacao(freq, nota, frequencia_nota):
 # Função para converter nota para frequência
 def nota_para_frequencia(nota):
     notas = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] #Lista de Notas
-    A4 = 440.0 #Definindo a frequencia de 440HZ (Padrão atual)
+    A4 = 440.0 # Definindo a frequencia de 440HZ (Padrão atual)
     C0 = A4 * pow(2, -4.75) #Define a primeira nota C0 com equação que calcula a partir do LA4
     nome_nota = nota[:-1]
     oitava = int(nota[-1])
