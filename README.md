@@ -8,7 +8,7 @@ A<BR>
 E<BR>
 
 # Half Step Down (1/2)
-https://youtu.be/hEMm7gxBYSc?t=52
+https://youtu.be/hEMm7gxBYSc?t=52<BR>
 D#<BR>
 A#<BR>
 F#<BR>
@@ -17,7 +17,7 @@ G#<BR>
 D#<BR>
 
 # Drop C#
-https://www.youtube.com/watch?v=noLtz9B1Knk
+https://www.youtube.com/watch?v=noLtz9B1Knk<BR>
 D#<BR>
 A#<BR>
 F#<BR>
