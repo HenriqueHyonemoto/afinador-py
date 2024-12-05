@@ -1,3 +1,16 @@
+# Requirements
+```
+pip install pyaudio
+```
+```
+pip install scipy
+```
+```
+pip install matplotlip
+```
+
+
+
 # Afinação Padrão
 
 E<BR>
