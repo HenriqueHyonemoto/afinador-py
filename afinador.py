@@ -5,13 +5,13 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 # Configurações do áudio
-FORMATO = pyaudio.paInt16  # Formato de áudio
+FORMATO = pyaudio.paInt16  # Formato de áudio representados como inteiros de 16 bits.
 CANAIS = 1  # Número de canais
 TAXA_AMOSTRAGEM = 44100  # Taxa de amostragem
 TAMANHO_BUFFER = 1024  # Tamanho do buffer
 
-LIMIAR_VOLUME = 150  # MODIFICAVEL | serve para definir volume minimo de audio detectavel
-MARGEM_ERRO = 1  # MODIFICAVEL | Margem de erro para a afinação
+LIMIAR_VOLUME = 1250  # MODIFICAVEL | Serve para definir volume mínimo de áudio detectável
+MARGEM_ERRO = 2  # MODIFICAVEL | Margem de erro para a afinação
 
 # Variáveis globais para armazenar a última nota, instrução e frequência detectadas
 ultima_nota = None
@@ -22,15 +22,16 @@ ultima_frequencia = None
 def capturar_audio():
     audio = pyaudio.PyAudio()
 
+    # Abre uma captura de audio do Microfone
     stream = audio.open(format=FORMATO,
                         channels=CANAIS,
                         rate=TAXA_AMOSTRAGEM,
                         input=True,
                         frames_per_buffer=TAMANHO_BUFFER)
-
     frames = []
 
-    for i in range(0, int(TAXA_AMOSTRAGEM / TAMANHO_BUFFER * 1)):  # MODIFICAVEL | grava audio de 1 em 1 segundo
+    # Loop para ler os frames de áudio do stream e armazená-los na lista `frames`
+    for i in range(0, int(TAXA_AMOSTRAGEM / TAMANHO_BUFFER * 1)):  # MODIFICAVEL | Grava áudio de 1 em 1 segundo
         data = stream.read(TAMANHO_BUFFER)
         frames.append(data)
 
@@ -93,9 +94,9 @@ def instrucoes_afinacao(freq, nota, frequencia_nota):
 
 # Função para converter nota para frequência
 def nota_para_frequencia(nota):
-    notas = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
-    A4 = 440.0
-    C0 = A4 * pow(2, -4.75)
+    notas = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] #Lista de Notas
+    A4 = 440.0 #Definindo a frequencia de 440HZ (Padrão atual)
+    C0 = A4 * pow(2, -4.75) #Define a primeira nota C0 com equação que calcula a partir do LA4
     nome_nota = nota[:-1]
     oitava = int(nota[-1])
 
@@ -157,7 +158,7 @@ def atualizar_grafico(frame):
 
 # Configura a animação do Matplotlib
 fig, ax = plt.subplots()
-ani = FuncAnimation(fig, atualizar_grafico, interval=1000)  # MODIFICAVEL, Atualiza o grafico a cada 1 segundo
+ani = FuncAnimation(fig, atualizar_grafico, interval=1000)  # MODIFICAVEL, Atualiza o gráfico a cada 1 segundo
 
 # Mostra a janela do Matplotlib
 plt.show()
