@@ -3,6 +3,9 @@
 pip install pyaudio
 ```
 ```
+pip install numpy
+```
+```
 pip install scipy
 ```
 ```
