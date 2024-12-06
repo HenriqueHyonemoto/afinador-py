@@ -10,8 +10,8 @@ CANAIS = 1  # Número de canais
 TAXA_AMOSTRAGEM = 44100  # Taxa de amostragem
 TAMANHO_BUFFER = 1024  # Tamanho do buffer
 
-LIMIAR_VOLUME = 1250  # MODIFICAVEL | Serve para definir volume mínimo de áudio detectável
-MARGEM_ERRO = 2  # MODIFICAVEL | Margem de erro para a afinação
+LIMIAR_VOLUME = 400  # MODIFICAVEL | Serve para definir volume mínimo de áudio detectável
+MARGEM_ERRO = 1  # MODIFICAVEL | Margem de erro para a afinação
 
 # Variáveis globais para armazenar a última nota, instrução e frequência detectadas
 ultima_nota = None
@@ -58,7 +58,7 @@ def processar_audio(dados_audio):
 
     # Ignorar se a amplitude média estiver abaixo do limiar
     if amplitude_media < LIMIAR_VOLUME:
-        return None, xf, np.abs(yf[:N//2])  
+        return None, xf, np.abs(yf[:N//2])
 
     # Encontrar a frequência dominante
     idx = np.argmax(np.abs(yf[:N//2]))
@@ -68,11 +68,11 @@ def processar_audio(dados_audio):
     return freq, xf, np.abs(yf[:N//2])
 
 # Função para mapear a frequência para a nota musical
-def frequencia_para_nota(freq):
+def encontrar_nota_proxima(freq):
     notas = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] # Todas as 12 Notas Musicais
     A4 = 440.0 # Define a nota LA4 com 440hz
     C0 = A4 * pow(2, -4.75) # Calcula a frequencia de C0 com base na frequencia de LA4
-    nome = "" # Nome da nota (C D E F G A B etc)
+    nota = "" # Nome da nota (C D E F G A B etc)
 
     if freq == 0: # Ignorar caso não tenha som
         return None
@@ -81,18 +81,18 @@ def frequencia_para_nota(freq):
     oitava = h // 12 # Calcula em qual oitava esta a nota (ex: agudo, medio, grave)
     n = h % 12 # Calcula qual o tom da nota dentro da oitava
 
-    # Verifica se o índice da nota (n) está dentro do intervalo válido (correção de bug). 
-    if n < 0 or n >= len(notas): 
+    # Verifica se o índice da nota (n) está dentro do intervalo válido (correção de bug).
+    if n < 0 or n >= len(notas):
         return None
 
-    nome = notas[n] + str(oitava) # O nome da nota + a oitava (Ex A4, C2, F5)
+    nota = notas[n] + str(oitava) # O nome da nota + a oitava (Ex A4, C2, F5)
 
     # Retorna dados obtidos (Nota + Posição da nota)
-    return nome, h
+    return nota, h
 
 # Função para determinar se a corda deve ser apertada ou afrouxada
 def instrucoes_afinacao(freq, nota, frequencia_nota):
-    diferenca = freq - frequencia_nota 
+    diferenca = freq - frequencia_nota
     if abs(diferenca) <= MARGEM_ERRO:
         return "Afinado"
     elif diferenca > MARGEM_ERRO:
@@ -104,48 +104,49 @@ def instrucoes_afinacao(freq, nota, frequencia_nota):
 def nota_para_frequencia(nota):
     notas = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] #Lista de Notas
     A4 = 440.0 # Definindo a frequencia de 440HZ (Padrão atual)
-    C0 = A4 * pow(2, -4.75) #Define a primeira nota C0 com equação que calcula a partir do LA4
-    nome_nota = nota[:-1]
-    oitava = int(nota[-1])
+    C0 = A4 * pow(2, -4.75) # Define a primeira nota C0 com equação que calcula a partir do LA4
+    nome_nota = nota[:-1]   # Extrai o nome da nota (por exemplo, "C", "C#", "D", etc.) da string nota.
+    oitava = int(nota[-1]) # Extrai a oitava da nota (por exemplo, 4 em "A4") 
 
-    if nome_nota not in notas:
+    if nome_nota not in notas: # Ignorar caso uma nota invalida seja reconhecida
         return None
 
-    indice_nota = notas.index(nome_nota)
-    h = 12 * oitava + indice_nota
-    return C0 * pow(2, h / 12)
+    indice_nota = notas.index(nome_nota) # Encontra o índice da nota musical (nome_nota) na lista de notas (notas).
+    h = 12 * oitava + indice_nota #Calcula o número de semitons (h) que a nota está acima da nota C0.
+    return C0 * pow(2, h / 12) # Calcula a frequência da nota musical
 
-# Função para atualizar o gráfico
-def atualizar_grafico(frame):
-    global ultima_nota, ultima_instrucao, ultima_frequencia
-    dados_audio = capturar_audio()
-    freq, xf, yf = processar_audio(dados_audio)
+# Função para atualizar o gráfico com novos dados de áudio a cada intervalo de tempo
+def atualizar_grafico(frame): 
+    global ultima_nota, ultima_instrucao, ultima_frequencia #Variaveis para mostrar dados necessarios
+    dados_audio = capturar_audio()  # Pegar os dados de áudio capturados
+    freq, xf, yf = processar_audio(dados_audio) # retorna a frequência do maior volume, todas frequências do audio (xf) volume (yf)
 
-    plt.clf()
-    plt.plot(xf, yf)
-    plt.xlabel('Frequência (Hz)')
-    plt.ylabel('Magnitude')
+    plt.clf() # limpa a figura atual
+    plt.plot(xf, yf) # Monta visualização da frequencia do audio gravado (intensidade e frequencia)
+    plt.xlabel('Frequência (Hz)') # Nome do Eixo X do grafico 
+    plt.ylabel('Magnitude') # Nome do eixo Y do grafico
 
     if freq is not None:
-        info_nota = frequencia_para_nota(freq)
-        if info_nota is None:
-            # Se a nota não for reconhecida, continuar mostrando a última nota reconhecida
-            if ultima_nota:
+        info_nota = encontrar_nota_proxima(freq) # Passa a frequencia para a função que encontra a nota mais proxima dessa frequencia
+        if info_nota is None: # Se a nota não for reconhecida, continuar mostrando a última nota reconhecida
+            if ultima_nota: # Se uma nota for detectada faça:
+                # Coloca as instruções de afinação no titulo do grafico
                 plt.title(f'Última Frequência: {ultima_frequencia:.2f} Hz\nÚltima Nota: {ultima_nota}\nÚltima Instrução: {ultima_instrucao}')
             else:
                 plt.title('Nota não reconhecida')
             return
-
+            #Retorna o nome da nota e a frequencia da nota.
         nota, h = info_nota
-        frequencia_nota = nota_para_frequencia(nota)
-        if frequencia_nota is None:
-            # Se a nota não for reconhecida, continuar mostrando a última nota reconhecida
-            if ultima_nota:
+
+        frequencia_nota = nota_para_frequencia(nota) # Passa a nota para a função que encontra a frequencia da nota
+        if frequencia_nota is None: # Se a frequencia não for reconhecida, continuar mostrando a última nota reconhecida
+            if ultima_nota: # Se uma nota for detectada faça:
+                # Coloca as instruções de afinação no titulo do grafico
                 plt.title(f'Última Frequência: {ultima_frequencia:.2f} Hz\nÚltima Nota: {ultima_nota}\nÚltima Instrução: {ultima_instrucao}')
             else:
                 plt.title('Nota não reconhecida')
             return
-
+        # Variaveis para continuar mostrando a ultima instrução caso nenhuma outra entrada seja detectada
         ultima_nota = f"{nota} ({frequencia_nota:.2f} Hz)"
         instrucao = instrucoes_afinacao(freq, nota, frequencia_nota)
         ultima_instrucao = instrucao
@@ -157,8 +158,9 @@ def atualizar_grafico(frame):
         else:
             cor_texto = 'orange'
 
+        # Texto mostrado quando uma nota for detectada
         plt.title(f'Frequência Dominante: {freq:.2f} Hz\nNota: {ultima_nota}\nInstrução: {instrucao}', color=cor_texto)
-    else:
+    else: # Mostrar quando nenhuma nota for detectada
         if ultima_nota:
             plt.title(f'Última Frequência: {ultima_frequencia:.2f} Hz\nÚltima Nota: {ultima_nota}\nÚltima Instrução: {ultima_instrucao}')
         else:
