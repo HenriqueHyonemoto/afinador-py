@@ -12,7 +12,8 @@ pip install scipy
 pip install matplotlip
 ```
 
-
+Versão do Python Utilizado: 3.12.8<br>
+Windows: https://www.python.org/ftp/python/3.12.8/python-3.12.8-amd64.exe<br>
 
 # Afinação Padrão
 
